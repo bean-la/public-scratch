@@ -192,7 +192,7 @@ graph TB
 
     subgraph "Editorial Layer"
         EVENT["slyce.event<br/>GCal metadata<br/>ID: event-{gcalEventId}<br/>Fields: name, start, end,<br/>description, gcalEventId"]
-        PARENT["slyce.asset (parent)<br/>ID: 2025-12-05__show-name<br/>Fields: source._ref, event._ref,<br/>name, sourceOrigin:"gcal-import"""]
+        PARENT["slyce.asset (parent)<br/>ID: 2025-12-05__show-name<br/>Fields: source._ref, event._ref,<br/>name, sourceOrigin: gcal-import"]
     end
 
     subgraph "Render Layer (Child Assets)"
