@@ -10,6 +10,8 @@ Client-facing docs at **https://bean-la.github.io/public-scratch/**
 | `content/dublab-current-vs-slyce.md` | **Start here** — today vs proposed, plain language + publish options |
 | `content/dublab-approach-outline.md` | Technical Slyce reference |
 
+Legacy links such as `/gcal-to-wordpress-workflow.html` are generated as redirects so old emails keep working.
+
 Push to `main` → GitHub Actions builds HTML (Mermaid → SVG) → Pages.
 
 ## Local build

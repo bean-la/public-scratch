@@ -156,6 +156,38 @@ function pageShell({ title, subtitle, body }) {
 </html>`;
 }
 
+function redirectShell({ title, target }) {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="refresh" content="0; url=${target}" />
+  <link rel="canonical" href="${target}" />
+  <title>${title}</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: system-ui, sans-serif;
+      background: #0f1117;
+      color: #e8eaef;
+      display: grid;
+      min-height: 100vh;
+      place-items: center;
+    }
+    main { max-width: 36rem; padding: 2rem; line-height: 1.5; }
+    a { color: #5b8def; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>${title}</h1>
+    <p>This page has moved to <a href="${target}">${target}</a>.</p>
+  </main>
+</body>
+</html>`;
+}
+
 async function buildPage(file) {
   const slug = file.replace(/\.md$/, "");
   const md = await fs.readFile(path.join(contentDir, file), "utf8");
@@ -232,6 +264,13 @@ async function main() {
     );
   }
 
+  await fs.writeFile(
+    path.join(siteDir, "gcal-to-wordpress-workflow.html"),
+    redirectShell({
+      title: "Google Calendar to WordPress workflow",
+      target: "dublab-current-vs-slyce.html",
+    }),
+  );
   await fs.writeFile(path.join(siteDir, ".nojekyll"), "");
   await fs.rm(tmpDir, { recursive: true, force: true });
   console.log(`Built ${pages.length} doc(s) + index → ${siteDir}`);
