@@ -183,8 +183,16 @@ async function main() {
   const entries = (await fs.readdir(contentDir))
     .filter((f) => f.endsWith(".md"))
     .sort((a, b) => {
-      if (a === "dublab-approach-outline.md") return -1;
-      if (b === "dublab-approach-outline.md") return 1;
+      const order = [
+        "dublab-approach-outline.md",
+        "dublab-current-vs-slyce.md",
+        "gcal-to-wordpress-workflow.md",
+      ];
+      const ai = order.indexOf(a);
+      const bi = order.indexOf(b);
+      if (ai !== -1 && bi !== -1) return ai - bi;
+      if (ai !== -1) return -1;
+      if (bi !== -1) return 1;
       return a.localeCompare(b);
     });
 
