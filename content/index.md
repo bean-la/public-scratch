@@ -2,18 +2,18 @@
 
 **Prepared for:** dublab · **May 2026**
 
-This site has two documents. They overlap on purpose at different depths — read them in order unless you already know the current dublab.com stack.
+This site has two main documents plus a meeting page. They overlap on purpose at different depths — read them in order unless you already know the current dublab.com stack.
 
 ---
 
 ## Which document to read
 
-| | [Today vs Slyce](dublab-current-vs-slyce.html) | [Platform approach](dublab-approach-outline.html) |
-|---|:---:|:---:|
-| **Best for** | Stakeholders, producers, web team | Engineers, operators |
-| **Answers** | How dublab.com works *now* (WordPress + Netlify GCal) vs what Slyce changes; publish options (keep WP vs Slyce API) | Full Slyce architecture: services, pipelines, data model, ops, import steps |
-| **Depth** | Migration context + plain-language workflow | Technical reference (~9 sections) |
-| **Read first?** | **Yes** — start here | Second — when you need implementation detail |
+| | [Meeting page](dublab-meeting-2026-05-20.html) | [Today vs Slyce](dublab-current-vs-slyce.html) | [Platform approach](dublab-approach-outline.html) |
+|---|:---:|:---:|:---:|
+| **Best for** | Today's call | Stakeholders, producers, web team | Engineers, operators |
+| **Answers** | Agenda, decisions, talking points | How dublab.com works *now* (WordPress + Netlify GCal) vs what Slyce changes; publish options (keep WP vs Slyce API) | Full Slyce architecture: services, pipelines, data model, ops, import steps |
+| **Depth** | Call guide | Migration context + plain-language workflow | Technical reference (~9 sections) |
+| **Read first?** | **For the meeting** | **For context** | Second — when you need implementation detail |
 
 ---
 
@@ -27,6 +27,7 @@ This site has two documents. They overlap on purpose at different depths — rea
 
 ## Quick links
 
+- **[Meeting page →](dublab-meeting-2026-05-20.html)** — agenda idea, decisions to make, and talking points for today's call
 - **[Today vs Slyce →](dublab-current-vs-slyce.html)** — current stack, proposed workflow, Option A / B at publish time
 - **[Platform approach →](dublab-approach-outline.html)** — Slyce services, recording pipeline, GCal automation, ops, import wizard
 
