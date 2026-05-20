@@ -93,9 +93,21 @@ async function renderMermaid(code, id) {
   const inFile = path.join(tmpDir, `${id}.mmd`);
   const outFile = path.join(tmpDir, `${id}.svg`);
   await fs.writeFile(inFile, code, "utf8");
+  const puppeteerConfig = path.join(__dirname, "puppeteer-config.json");
   execFileSync(
     mmdcBin,
-    ["-i", inFile, "-o", outFile, "-b", "transparent", "-t", "dark"],
+    [
+      "-i",
+      inFile,
+      "-o",
+      outFile,
+      "-b",
+      "transparent",
+      "-t",
+      "dark",
+      "-p",
+      puppeteerConfig,
+    ],
     { stdio: "inherit" },
   );
   return fs.readFile(outFile, "utf8");
