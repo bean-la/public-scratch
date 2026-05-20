@@ -182,7 +182,11 @@ async function main() {
 
   const entries = (await fs.readdir(contentDir))
     .filter((f) => f.endsWith(".md"))
-    .sort();
+    .sort((a, b) => {
+      if (a === "dublab-approach-outline.md") return -1;
+      if (b === "dublab-approach-outline.md") return 1;
+      return a.localeCompare(b);
+    });
 
   if (entries.length === 0) {
     throw new Error(`No markdown files in ${contentDir}`);
