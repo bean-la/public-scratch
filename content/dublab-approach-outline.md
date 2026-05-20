@@ -4,6 +4,8 @@
 **Date:** May 2026  
 **Status:** Post-data-model migration, ready for import
 
+> **Context:** For how this fits alongside today's dublab.com (WordPress + Netlify GCal) and publish options, read **[Today vs Slyce](dublab-current-vs-slyce.html)** first. This document is the technical deep dive.
+
 ---
 
 ## 1. Executive Summary
@@ -422,7 +424,7 @@ The wipe script at `apps/worker/src/lib/wipe-sanity-project.ts` can clear all re
 4. **Preset configuration** — The current setup uses one default FFmpeg preset. Do you want additional presets (different bitrates, format variants, artwork embedding)? Configured via `auto_preset_slugs` box secret.
 5. **GCal event filter regex** — If your calendar event summaries have recurring prefixes (e.g. "LIVE: Show Name"), we can set up a regex to strip them for cleaner asset names.
 6. **Calendar scope** — Which Google Calendar should the worker read? Currently defaults to the primary calendar. If dublab uses multiple calendars for different show types, we can configure per-box calendar selection.
-7. **Push destinations** — The pipeline currently lands assets in Sanity + R2. Slyce also supports Google Drive and YouTube push for distribution. Worth enabling? Related: publishing workflows (scheduled publish, draft/review).
+7. **Push destinations** — See [Today vs Slyce — publish boundary](dublab-current-vs-slyce.html). Slyce also supports Google Drive and YouTube push; publishing workflows (draft/review) are optional.
 8. **Retention policy** — Recordings on disk accumulate. Do you want automatic cleanup after successful render + publish? Configurable per-box.
 9. **Monitoring & alerting** — Currently logs are structured and searchable. If you want proactive alerts (render failures, disk pressure, GCal auth expiry), we can configure Loki-based alerting.
 

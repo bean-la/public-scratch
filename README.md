@@ -1,12 +1,16 @@
 # public-scratch
 
-Client-facing docs published at **https://bean-la.github.io/public-scratch/**
+Client-facing docs at **https://bean-la.github.io/public-scratch/**
 
-## Source
+## Documents
 
-Markdown lives in [`content/`](content/). Add any `.md` file there; push to `main` and GitHub Actions builds static HTML (Mermaid → SVG) and deploys to Pages.
+| File | Role |
+|------|------|
+| `content/index.md` | Site hub — reading guide (built as `/index.html`) |
+| `content/dublab-current-vs-slyce.md` | **Start here** — today vs proposed, plain language + publish options |
+| `content/dublab-approach-outline.md` | Technical Slyce reference |
 
-Primary doc: `content/dublab-approach-outline.md` → site root `index.html` when it is the only page.
+Push to `main` → GitHub Actions builds HTML (Mermaid → SVG) → Pages.
 
 ## Local build
 
@@ -17,17 +21,9 @@ open ../site/index.html
 
 ## Monorepo
 
-This directory is a submodule of [slyce-studio](https://github.com/bean-la/slyce-studio). After editing `content/`, commit and push from here:
+Submodule of [slyce-studio](https://github.com/bean-la/slyce-studio). Publish:
 
 ```bash
-cd _external/public-scratch
-git add content/
-git commit -m "Update docs"
-git push origin main
-```
-
-Or from the monorepo root:
-
-```bash
-./scripts/publish-public-scratch.sh
+cd _external/public-scratch && git add content/ && git commit -m "Update docs" && git push
+# or: ./scripts/publish-public-scratch.sh
 ```

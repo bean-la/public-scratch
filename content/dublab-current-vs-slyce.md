@@ -1,15 +1,52 @@
-# dublab.com Today vs Slyce: Architecture Comparison
+# dublab.com Today vs Slyce
 
 **Prepared for:** dublab  
 **Repos:** [dublab-site](https://github.com/futurerootsinc/dublab-site) · [dublab-wp](https://github.com/futurerootsinc/dublab-wp)
 
-This page describes how **dublab.com works today** (WordPress backend + Google Calendar via Netlify Functions) and how the **proposed Slyce workflow** would sit underneath — with two open options for what happens at publish time.
+**Start here.** This page covers the **current dublab.com stack** (WordPress + Google Calendar via Netlify Functions) and the **proposed Slyce workflow**, including what happens at publish time. For service-level detail (Sanity ids, worker ops, import wizard), see the [platform approach](dublab-approach-outline.html).
+
+---
+
+## In plain language
+
+**Today:** A show airs → the recording is saved → someone opens WordPress, types the title and date, uploads audio, and publishes. The calendar already knows the schedule (GCal powers the live schedule on the site), but **archive posts are still manual**.
+
+**With Slyce:** The recording lands → Slyce checks the calendar for what was on air at that time → it creates a show record and audio asset → FFmpeg produces MP3 and streaming versions → the result is ready to publish. Same calendar event never creates duplicates.
+
+```mermaid
+flowchart TD
+    GCAL[("Google Calendar")]
+    REC["Recording lands"]
+    MATCH["Slyce matches to calendar event"]
+    CREATE["Show record + audio asset"]
+    PROCESS["MP3, HLS, etc."]
+    PUBLISH["Publish — see options below"]
+
+    GCAL --> MATCH
+    REC --> MATCH
+    MATCH --> CREATE --> PROCESS --> PUBLISH
+
+    style GCAL fill:#c0392b,color:#fff
+    style MATCH fill:#3498db,color:#fff
+    style PROCESS fill:#2d6a4f,color:#fff
+    style PUBLISH fill:#e67e22,color:#fff
+```
+
+| Today (manual) | With Slyce |
+|----------------|------------|
+| Someone notes when a show aired | Calendar already has the schedule |
+| Manual WordPress archive post | Event + asset created automatically |
+| Typed title, date, description | Pulled from the calendar event |
+| Manual audio upload | FFmpeg → R2 automatically |
+| Risk of duplicates or missed posts | One show record per GCal event id |
+
+**Built and tested:** recording → match → create → audio processing. **Not yet configured:** pushing to dublab.com (WordPress or direct API — below).
 
 ---
 
 ## Current: dublab.com stack
 
-dublab.com is not a monolith. It is three layers that only partially talk to each other.
+dublab.com is three layers that only partially talk to each other.
 
 ```mermaid
 flowchart TB
@@ -52,52 +89,45 @@ flowchart TB
 | **LazyState client** | Most pages load JSON from WordPress by URL path — e.g. `GET api-1.dublab.com/archive/my-show` returns structured page data. |
 | **Netlify redirects** | Short links, stream URLs, legacy paths; SPA fallback to `index.html`. |
 
-The frontend does **not** embed WordPress templates. WordPress is a **headless JSON API** behind the SPA.
+WordPress is a **headless JSON API** behind the SPA — not traditional WP templates.
 
 ### Layer 2 — GCal via Netlify Functions
 
-The **live broadcast schedule** on the site (schedule list, now playing, schedule detail pages under `/schedule/:id/...`) comes from **Google Calendar**, not from WordPress.
+The **live broadcast schedule** (schedule list, now playing, `/schedule/:id/...` detail) comes from **Google Calendar**, not WordPress.
 
 | Function | What it does |
 |----------|----------------|
-| `schedule` | Calls Google Calendar API for ~7 days of events (OAuth credentials + token in repo env). Parses titles, descriptions, Drive image links. In-memory cache ~1 hour. |
-| `schedule_single_event` | Fetches one calendar event by GCal event id. |
+| `schedule` | Google Calendar API for ~7 days of events. OAuth in Netlify env. In-memory cache ~1 hour. |
+| `schedule_single_event` | One calendar event by GCal id. |
 
-The Vue audio store calls `/.netlify/functions/schedule` on load and keeps events in a client-side `Map` keyed by GCal id.
-
-**Important:** This GCal path is **read-only** and **frontend-only**. It does not create WordPress archive posts or attach recordings.
+The Vue audio store calls `/.netlify/functions/schedule` on load. This path is **read-only** — it does not create archive posts or attach recordings.
 
 ### Layer 3 — WordPress backend (`dublab-wp`)
 
-Hosted on **WPEngine** (`api-1.dublab.com`). The custom **dublab** theme exposes **LazyState** — route patterns map to PHP model files that return JSON.
+Hosted on **WPEngine** (`api-1.dublab.com`). The **dublab** theme exposes **LazyState** — URL patterns map to PHP models that return JSON.
 
-| Route pattern | Model | Content |
-|---------------|-------|---------|
-| `/archive/...` | `broadcast` | Past show archive posts — title, content, **audio URL**, broadcast date, genres, show/DJ links |
-| `/schedule/...` | `schedule` | Events Manager rows (legacy/alternate schedule surface) |
-| `/events/...` | `event` | Public events (concerts, etc.) |
-| `/shows/...` | `show` | Recurring show pages |
+| Route | Content |
+|-------|---------|
+| `/archive/...` | Past show archive posts — audio URL, broadcast date, genres, show/DJ links |
+| `/schedule/...` | Events Manager rows (legacy schedule surface) |
+| `/events/...` | Public events |
+| `/shows/...` | Recurring show pages |
 
-**Archive posts** (`/archive/...`) are the permanent record listeners browse. They are **WordPress posts** with Advanced Custom Fields — especially `audio`, `broadcast_date`, and links to show/DJ taxonomy. Media files live on **S3** via the S3-Uploads plugin.
+Archive posts use **ACF** (`audio`, `broadcast_date`, etc.). Media on **S3** via S3-Uploads.
 
-**Events Manager** still powers some schedule/stream metadata inside WP (`eme_get_events`), but the main site schedule UI the public sees today is fed by **Netlify → GCal**.
-
-### Current pain: two schedules, manual archive
+### Current gap
 
 ```mermaid
 flowchart LR
     GCAL2["Google Calendar"]
     NETLIFY2["Netlify Functions"]
-    REC["Recording on server"]
-    HUMAN["Someone creates<br/>WP archive post"]
-    WP2["WordPress archive<br/>audio + metadata"]
-    WEB["dublab.com visitor"]
+    REC["Recording"]
+    HUMAN["Manual WP archive post"]
+    WP2["WordPress archive"]
+    WEB["dublab.com"]
 
-    GCAL2 --> NETLIFY2
-    NETLIFY2 --> WEB
-    REC --> HUMAN
-    HUMAN --> WP2
-    WP2 --> WEB
+    GCAL2 --> NETLIFY2 --> WEB
+    REC --> HUMAN --> WP2 --> WEB
 
     style HUMAN fill:#c0392b,color:#fff
     style NETLIFY2 fill:#4a6fa5,color:#fff
@@ -105,15 +135,13 @@ flowchart LR
 ```
 
 - **Schedule** = GCal → Netlify → Vue (automated).
-- **Archive** = recording → **manual** WordPress post (title, date, audio upload, publish).
-- GCal event id is **not** wired through to archive deduplication on the WP side today.
-- Credentials for GCal live in the Netlify function environment; WP and GCal are separate data stores.
+- **Archive** = recording → manual WordPress (not linked to GCal id for dedup).
 
 ---
 
-## Proposed: Slyce backend workflow
+## Proposed: Slyce backend
 
-Slyce replaces the **recording → metadata → processed audio** pipeline. Google Calendar becomes the **source of truth for matching** (same calendar dublab already uses), but matching and asset creation happen on the **dubstream box** and in **Sanity + R2**, not in Netlify Functions or manual WP entry.
+Slyce replaces **recording → metadata → processed audio**. Matching runs on **dubstream** (not Netlify); assets live in **Sanity + R2**.
 
 ```mermaid
 flowchart TB
@@ -122,15 +150,15 @@ flowchart TB
         WORKER["Slyce worker<br/>auto-import, GCal match, FFmpeg"]
     end
 
-    GCAL_S["Google Calendar<br/>same schedule calendar"]
+    GCAL_S["Google Calendar"]
     subgraph SLYCE_CLOUD["Slyce cloud"]
-        SANITY["Sanity CMS<br/>events, assets, sources"]
-        R2["Cloudflare R2<br/>HLS, MP3, audio"]
+        SANITY["Sanity CMS"]
+        R2["Cloudflare R2"]
         CLOUD["cloud API"]
         STAT["stat — media serving"]
     end
 
-    STUDIO["dublab.slyce.studio<br/>admin + sync wizard"]
+    STUDIO["dublab.slyce.studio"]
 
     REC_S --> WORKER
     GCAL_S --> WORKER
@@ -145,47 +173,32 @@ flowchart TB
     style GCAL_S fill:#c0392b,color:#fff
 ```
 
-### What Slyce automates (already built)
-
-1. Recording detected on **dubstream**.
-2. Worker fetches GCal events in a ±10 minute window around the recording start.
-3. On match: creates **`slyce.event`** (deterministic id from GCal event id) and **`slyce.asset`** (parent, human-readable id).
-4. FFmpeg renders HLS / MP3 / audio variants; uploads to **R2**; child asset docs in Sanity.
-5. Re-running import is safe — same GCal id never duplicates.
-
-See [dublab approach outline](dublab-approach-outline.html) and [GCal → WordPress workflow](gcal-to-wordpress-workflow.html) for step-by-step detail.
+Pipeline summary: auto-import → GCal match (±10 min) → `slyce.event` + `slyce.asset` → FFmpeg → R2. Details: [platform approach §4–6](dublab-approach-outline.html).
 
 ---
 
 ## Publish boundary: WordPress vs Slyce API
 
-Everything above the dashed line is **in scope today or in active build**. Everything inside the dashed box is the **decision still to make** — how finalized, published show assets reach listeners on dublab.com.
+Built through FFmpeg → R2. **Still to decide:** how listeners get finalized shows on dublab.com.
 
 ```mermaid
 flowchart TB
     subgraph BUILT["Built / in progress — Slyce"]
-        direction TB
-        REC3["Recording"]
-        MATCH3["GCal match"]
-        ASSET3["Sanity event + asset"]
-        RENDER3["FFmpeg → R2"]
-        REC3 --> MATCH3 --> ASSET3 --> RENDER3
+        REC3["Recording"] --> MATCH3["GCal match"] --> ASSET3["Sanity event + asset"] --> RENDER3["FFmpeg → R2"]
     end
 
-    subgraph FUTURE["Future — publish path TBD · dashed boundary"]
-        direction TB
-        OPT_A["Option A: Push to WordPress<br/>Create/update archive post<br/>audio URL, title, date, content"]
-        OPT_B["Option B: Slyce as source of truth<br/>dublab.com reads Slyce API<br/>published event + asset URLs"]
-        WP_SITE["dublab.com archive pages"]
+    subgraph FUTURE["Future — publish path TBD"]
+        OPT_A["Option A: Push to WordPress"]
+        OPT_B["Option B: Slyce API on dublab.com"]
+        WP_SITE["dublab.com archive"]
         LISTENER["Listener"]
 
-        OPT_A --> WP_SITE
+        OPT_A --> WP_SITE --> LISTENER
         OPT_B --> LISTENER
-        WP_SITE --> LISTENER
     end
 
-    RENDER3 -.->|"sync published assets"| OPT_A
-    RENDER3 -.->|"OR serve directly"| OPT_B
+    RENDER3 -.-> OPT_A
+    RENDER3 -.-> OPT_B
 
     style BUILT fill:#2d6a4f,color:#fff
     style FUTURE fill:#1a1d26,color:#e8eaef
@@ -193,58 +206,29 @@ flowchart TB
     style OPT_B fill:#3498db,color:#fff
 ```
 
-### Option A — Push back to WordPress
-
-Keep **dublab.com + LazyState + archive URLs** as the public site. Slyce becomes the **factory**; WordPress remains the **storefront**.
-
-| Slyce produces | WordPress receives |
-|----------------|-------------------|
-| Show title, date, description (from GCal) | Post title, content, `broadcast_date` |
-| MP3 / HLS URLs on R2 | ACF `audio` field or embed |
-| Stable GCal event id | Meta field for dedup on re-sync |
-
-**Pros:** Minimal change to public URLs, SEO, and existing archive UX.  
-**Cons:** Two systems to maintain; need a reliable push job and field mapping.
-
-### Option B — Replace WP archive source with Slyce API
-
-**dublab.com** (or a future frontend) fetches **published** events/assets from Slyce (`cloud` + `stat`) instead of `api-1.dublab.com/archive/...`.
-
-| Slyce surface | Replaces |
-|---------------|----------|
-| Sanity `slyce.event` + parent/child assets | WP archive post + ACF |
-| `dublab.slyce.fm` / stat URLs | S3 audio URLs on archive posts |
-| Studio sync + publish state | Manual WP admin |
-
-**Pros:** Single source of truth; no duplicate posts; GCal dedup end-to-end.  
-**Cons:** Frontend and URL migration work; WordPress may remain for events/shows pages until fully replaced.
-
-### What likely stays either way
-
-| System | Notes |
-|--------|--------|
-| **Netlify + Vue** | Can remain the public shell; schedule could eventually come from Slyce instead of Netlify Functions. |
-| **GCal** | Still the schedule source; Slyce worker reads it directly (no Netlify middle layer). |
-| **WP Events / shows / events pages** | Out of scope for first Slyce import; can migrate incrementally. |
+| | Option A — Push to WP | Option B — Slyce as source |
+|---|----------------------|---------------------------|
+| **Idea** | Slyce is the factory; WordPress stays the storefront | dublab.com reads published assets from Slyce |
+| **Pros** | Same archive URLs, SEO, existing UX | Single source of truth; end-to-end GCal dedup |
+| **Cons** | Two systems; field mapping + sync job | Frontend migration; WP may remain for events/shows |
 
 ---
 
-## Side-by-side summary
+## Side-by-side
 
-| Concern | Today (WP + Netlify GCal) | Proposed (Slyce) |
-|---------|---------------------------|----------------|
-| Live schedule on site | GCal → Netlify Functions → Vue | GCal → worker (same calendar); site TBD |
-| Archive / past shows | Manual WP posts + S3 audio | Auto event + asset from recording match |
-| Dedup by calendar event | Not enforced on archive | Deterministic ids from GCal event id |
-| Processed audio | Uploaded manually to S3 | FFmpeg → R2 automatically |
-| Public API | `api-1.dublab.com` LazyState JSON | Slyce cloud + stat (Option B) or sync to WP (Option A) |
-| Admin | WP admin + GCal editing | Slyce Studio + sync wizard |
+| Concern | Today | Proposed (Slyce) |
+|---------|-------|------------------|
+| Live schedule | GCal → Netlify → Vue | GCal → worker; site wiring TBD |
+| Archive / past shows | Manual WP + S3 | Auto from recording match |
+| Dedup by calendar event | Not on archive | Deterministic GCal event id |
+| Processed audio | Manual S3 upload | FFmpeg → R2 |
+| Public API | `api-1.dublab.com` | WP sync (A) or Slyce cloud/stat (B) |
 
 ---
 
-## Recommended next steps
+## Next steps
 
-1. **Run Slyce import** on dubstream — populate Sanity from existing recordings + GCal (`/admin/box/dubstream/sync/`).
-2. **Decide publish boundary** — Option A (WP push), Option B (Slyce API), or hybrid (new archives on Slyce, legacy stays on WP).
-3. **Define archive format** — fields needed on dublab.com (audio player, show page link, Mixcloud, etc.) so push or API contract is clear.
-4. **Plan Netlify function retirement** — once schedule reads from Slyce or WP is fed by Slyce, `schedule.js` can be deprecated.
+1. **Run Slyce import** — `/admin/box/dubstream/sync/` ([details](dublab-approach-outline.html)).
+2. **Decide publish boundary** — Option A, B, or hybrid.
+3. **Define archive fields** — player, show links, Mixcloud, etc.
+4. **Plan Netlify function retirement** — schedule can eventually come from Slyce.

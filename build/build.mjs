@@ -162,9 +162,13 @@ async function buildPage(file) {
   const title = md.match(/^#\s+(.+)/m)?.[1] ?? slug;
   const bodyHtml = await markdownToHtml(md, slug);
   const subtitle =
-    slug === "dublab-approach-outline"
-      ? "Platform approach & architecture overview · May 2026"
-      : "";
+    slug === "index"
+      ? "Documentation hub · May 2026"
+      : slug === "dublab-current-vs-slyce"
+        ? "Start here — migration context · May 2026"
+        : slug === "dublab-approach-outline"
+          ? "Technical reference · May 2026"
+          : "";
   return {
     slug,
     title,
@@ -184,9 +188,9 @@ async function main() {
     .filter((f) => f.endsWith(".md"))
     .sort((a, b) => {
       const order = [
-        "dublab-approach-outline.md",
+        "index.md",
         "dublab-current-vs-slyce.md",
-        "gcal-to-wordpress-workflow.md",
+        "dublab-approach-outline.md",
       ];
       const ai = order.indexOf(a);
       const bi = order.indexOf(b);
@@ -200,18 +204,21 @@ async function main() {
     throw new Error(`No markdown files in ${contentDir}`);
   }
 
+  const docFiles = entries.filter((f) => f !== "index.md");
   const pages = [];
-  for (const file of entries) {
+
+  for (const file of docFiles) {
     const page = await buildPage(file);
     pages.push(page);
     await fs.writeFile(path.join(siteDir, `${page.slug}.html`), page.html);
   }
 
-  const primary =
-    pages.find((p) => p.slug === "dublab-approach-outline") ?? pages[0];
-  await fs.writeFile(path.join(siteDir, "index.html"), primary.html);
-
-  if (pages.length > 1) {
+  if (entries.includes("index.md")) {
+    const hub = await buildPage("index.md");
+    await fs.writeFile(path.join(siteDir, "index.html"), hub.html);
+  } else if (pages.length === 1) {
+    await fs.writeFile(path.join(siteDir, "index.html"), pages[0].html);
+  } else {
     const list = pages
       .map((p) => `<li><a href="${p.slug}.html">${p.title}</a></li>`)
       .join("\n");
@@ -223,15 +230,11 @@ async function main() {
         body: `<ul class="index-list">${list}</ul>`,
       }),
     );
-    await fs.writeFile(
-      path.join(siteDir, `${primary.slug}.html`),
-      primary.html,
-    );
   }
 
   await fs.writeFile(path.join(siteDir, ".nojekyll"), "");
   await fs.rm(tmpDir, { recursive: true, force: true });
-  console.log(`Built ${pages.length} page(s) → ${siteDir}`);
+  console.log(`Built ${pages.length} doc(s) + index → ${siteDir}`);
 }
 
 main().catch((err) => {
