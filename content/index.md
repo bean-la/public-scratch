@@ -31,4 +31,4 @@ This site has two main documents plus a meeting page. They overlap on purpose at
 - **[Today vs Slyce →](dublab-current-vs-slyce.html)** — current stack, proposed workflow, Option A / B at publish time
 - **[Platform approach →](dublab-approach-outline.html)** — Slyce services, recording pipeline, GCal automation, ops, import wizard
 
-**Live:** [dublab.slyce.studio](https://dublab.slyce.studio) · **Repos:** [dublab-site](https://github.com/futurerootsinc/dublab-site) · [dublab-wp](https://github.com/futurerootsinc/dublab-wp)
+**Live:** [dublab.slyce.studio](https://dublab.slyce.studio) · **Repos:** [dublab-site](https://github.com/futurerootsinc/dublab-site) · [dublab-wp](https://github.com/futurerootsinc/dublab-wp) · [public-scratch](https://bean-la.github.io/public-scratch/) · [slyce-studio](https://github.com/bean-la/slyce-studio)
